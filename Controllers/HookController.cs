@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RSCodeBuildBox.Service;
 using System;
-using System.IO;
-using System.Linq;
 
 namespace RSCodeBuildBox.Controllers
 {
@@ -11,9 +9,11 @@ namespace RSCodeBuildBox.Controllers
     public class HookController : ControllerBase
     {
         public readonly IRSGitService _gitService;
-        public HookController(IRSGitService rSGitService)
+        public readonly IRSDotnetService _dotnetService;
+        public HookController(IRSGitService rSGitService, IRSDotnetService dotnetService)
         {
             _gitService = rSGitService;
+            _dotnetService = dotnetService;
         }
 
         [HttpGet]
@@ -27,36 +27,19 @@ namespace RSCodeBuildBox.Controllers
             if (success)
             {
                 Console.WriteLine("Building Project...");
-                return BuildProject();
+                string build_output = _dotnetService.BuildProject();
+                if (build_output.Contains("success") || build_output.Contains("başarılı"))
+                {
+                    //Creating publish...
+                    success = _dotnetService.PublishProject();
+                    if(success == false)
+                        return "-- Have a some error on publishing !";
+                }
             }
             else
-                return "Have a some error...";
-        }
+                return "-- Have a some error on cloning repo !";
 
-        private string BuildProject()
-        {
-
-            var clone_path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RSCodeBuildBox", "temp");
-            string strCmdText = $"build {clone_path}";
-            return RunProcess("dotnet", strCmdText); ;
-        }
-
-        public string RunProcess(string filename,params string[] parameters)
-        {
-            var p = new System.Diagnostics.Process();
-            p.StartInfo = new System.Diagnostics.ProcessStartInfo(filename, string.Join(" ", parameters));
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.UseShellExecute = false;
-            p.Start();
-            string logMessage = "";
-            while (!p.HasExited)
-            {
-                string line = p.StandardOutput.ReadToEnd();
-                Console.WriteLine(line);
-                logMessage += line;
-            }
-            p.Kill();
-            return logMessage;
+            return "*** Publishing Success ***";
         }
     }
 }

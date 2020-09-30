@@ -3,10 +3,11 @@
     public class RSHookConfig
     {
         public string Path { get; set; }
-        public Github Github { get; set; }
+        public GithubConfig GithubConfig { get; set; }
+        public string Copy_Path { get; set; }
     }
 
-    public class Github
+    public class GithubConfig
     {
         public string Access_Token { get; set; }
         public string Clone_Path { get; set; }
